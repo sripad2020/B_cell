@@ -1,0 +1,973 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protein Sequence Analyzer</title>
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tilt.js/1.2.1/tilt.jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary: #6a11cb;
+            --secondary: #2575fc;
+            --accent: #ff4d4d;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            opacity: 0.7;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            color: var(--dark);
+            font-weight: 400;
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2.5rem;
+        }
+
+        .input-section {
+            flex: 1;
+            min-width: 350px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .output-section {
+            flex: 1;
+            min-width: 350px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 1.8rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.7rem;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 180px;
+            padding: 1.2rem;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--dark);
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            border: 1px solid rgba(106, 17, 203, 0.2);
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+            background: white;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--dark);
+            border: 1px solid rgba(106, 17, 203, 0.2);
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            appearance: none;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+            background: white;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236a11cb' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 12px;
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 1.2rem 2.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(106, 17, 203, 0.4);
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .visualization-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .visualization {
+            flex-grow: 1;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            min-height: 350px;
+            border: 1px solid rgba(106, 17, 203, 0.2);
+        }
+
+        #molecule-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #chart-container {
+            height: 250px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(106, 17, 203, 0.2);
+        }
+
+        .results {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            color: var(--dark);
+            border: 1px solid rgba(106, 17, 203, 0.2);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--dark);
+            opacity: 0.8;
+        }
+
+        /* Animation for cards */
+        .card {
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .input-section, .output-section {
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+
+            header, .input-section, .output-section {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Amino acid color coding for visualization */
+        .amino-acid-key {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+
+        .amino-acid {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.75rem;
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(106, 17, 203, 0.1);
+        }
+
+        .amino-acid-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 0.4rem;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+            border: 4px solid rgba(106, 17, 203, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Section titles */
+        .section-title {
+            font-size: 1.4rem;
+            margin-bottom: 1.2rem;
+            color: var(--primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        .section-title i {
+            font-size: 1.2rem;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            font-weight: normal;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle.js Background - Fixed position -->
+    <div id="particles-js"></div>
+
+    <div class="container">
+        <header class="card" data-tilt data-tilt-scale="1.05" data-tilt-glare data-tilt-max-glare="0.2">
+            <h1>Protein Sequence Analyzer</h1>
+            <p class="subtitle">Advanced protein engineering analysis with 3D visualization</p>
+        </header>
+
+        <div class="main-content">
+            <section class="input-section card" data-tilt data-tilt-scale="1.02" data-tilt-glare data-tilt-max-glare="0.1">
+                <h2 class="section-title">
+                    <i>🧬</i> Input Parameters
+                </h2>
+                
+                <form id="protein-form" method="POST" actio n="/analyze">
+                    <div class="form-group">
+                        <label for="protein-sequence">
+                            Protein Sequence 
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Enter protein sequence using standard amino acid codes (ACDEFGHIKLMNPQRSTVWY)</span>
+                            </span>
+                        </label>
+                        <textarea id="protein-sequence" name="protein_sequence" placeholder="Example: MALWMRLLPLLALLALWGPDPAAAFVNQHLCGSHLVEALYLVCGERGFFYTPKTRREAEDLQVGQVELGGGPGAGSLQPLALEGSLQKRGIVEQCCTSICSLYQLENYCN" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sequence-number">Sequence ID</label>
+                        <input type="number" id="sequence-number" name="sequence_id" placeholder="Enter unique sequence ID" min="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="data-type">Structure Type</label>
+                        <select id="data-type" name="structure_type" required>
+                            <option value="linear">Linear</option>
+                            <option value="Non-Linear">Non=Linear</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="analyze-btn">
+                        <span id="button-text">Analyze Sequence</span>
+                        <div id="spinner" class="spinner"></div>
+                    </button>
+                </form>
+            </section>
+            <section class="output-section card" data-tilt data-tilt-scale="1.02" data-tilt-glare data-tilt-max-glare="0.1">
+                <h2 class="section-title">
+                    <i>🔬</i> Analysis Results
+                </h2>
+                <div class="visualization-container">
+                    <div class="visualization" id="molecule-container">
+                    </div>
+                    <div id="chart-container">
+                        <canvas id="protein-chart"></canvas>
+                    </div>
+                </div>
+                <div class="amino-acid-key" id="amino-acid-key">
+                </div>
+
+                <h2 class="section-title" style="margin-top: 1.5rem;">
+                    <i>📊</i> Detailed Report
+                </h2>
+                <div class="results" id="analysis-results">
+                    Submit a protein sequence to view detailed analysis results...
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Particle.js with new configuration
+        document.addEventListener('DOMContentLoaded', function() {
+            particlesJS('particles-js', {
+                "particles": {
+                    "number": {
+                        "value": 70,
+                        "density": {
+                            "enable": true,
+                            "value_area": 900
+                        }
+                    },
+                    "color": {
+                        "value": ["#ffffff", "#e0e0e0", "#c0c0c0"]
+                    },
+                    "shape": {
+                        "type": "circle",
+                        "stroke": {
+                            "width": 0,
+                            "color": "#000000"
+                        },
+                        "polygon": {
+                            "nb_sides": 5
+                        }
+                    },
+                    "opacity": {
+                        "value": 0.6,
+                        "random": true,
+                        "anim": {
+                            "enable": true,
+                            "speed": 1,
+                            "opacity_min": 0.2,
+                            "sync": false
+                        }
+                    },
+                    "size": {
+                        "value": 3,
+                        "random": true,
+                        "anim": {
+                            "enable": true,
+                            "speed": 3,
+                            "size_min": 0.5,
+                            "sync": false
+                        }
+                    },
+                    "line_linked": {
+                        "enable": true,
+                        "distance": 130,
+                        "color": "#ffffff",
+                        "opacity": 0.3,
+                        "width": 1
+                    },
+                    "move": {
+                        "enable": true,
+                        "speed": 2,
+                        "direction": "none",
+                        "random": true,
+                        "straight": false,
+                        "out_mode": "out",
+                        "bounce": false,
+                        "attract": {
+                            "enable": true,
+                            "rotateX": 800,
+                            "rotateY": 1600
+                        }
+                    }
+                },
+                "interactivity": {
+                    "detect_on": "canvas",
+                    "events": {
+                        "onhover": {
+                            "enable": true,
+                            "mode": "repulse"
+                        },
+                        "onclick": {
+                            "enable": true,
+                            "mode": "push"
+                        },
+                        "resize": true
+                    },
+                    "modes": {
+                        "grab": {
+                            "distance": 150,
+                            "line_linked": {
+                                "opacity": 0.7
+                            }
+                        },
+                        "bubble": {
+                            "distance": 350,
+                            "size": 35,
+                            "duration": 2,
+                            "opacity": 0.6,
+                            "speed": 3
+                        },
+                        "repulse": {
+                            "distance": 120,
+                            "duration": 0.4
+                        },
+                        "push": {
+                            "particles_nb": 4
+                        },
+                        "remove": {
+                            "particles_nb": 2
+                        }
+                    }
+                },
+                "retina_detect": true
+            });
+
+            // Initialize Tilt.js on all elements with data-tilt attribute
+            $('.card').tilt({
+                glare: true,
+                maxGlare: 0.15,
+                scale: 1.02,
+                perspective: 1200
+            });
+
+            // Initialize Three.js scene
+            initThreeJS();
+
+            // Initialize empty chart
+            initProteinChart();
+
+            // Generate amino acid color key
+            generateAminoAcidKey();
+
+            // Form submission handler
+            document.getElementById('protein-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                analyzeSequence();
+            });
+        });
+
+        // Three.js initialization with protein-themed visualization
+        function initThreeJS() {
+            const container = document.getElementById('molecule-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Create scene with light background
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f9fa);
+
+            // Create camera
+            const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+            camera.position.z = 8;
+            camera.position.y = 2;
+
+            // Create renderer with antialiasing
+            const renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true
+            });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(width, height);
+            container.appendChild(renderer.domElement);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight1.position.set(1, 1, 1);
+            scene.add(directionalLight1);
+
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+            directionalLight2.position.set(-1, -1, -1);
+            scene.add(directionalLight2);
+
+            // Create initial placeholder structure (alpha helix)
+            const helix = createProteinStructure('alpha-helix', 'ACDEFGHIKLMNPQRSTVWY');
+            scene.add(helix);
+
+            // Add orbit controls for interactive viewing
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.maxPolarAngle = Math.PI;
+            controls.minDistance = 3;
+            controls.maxDistance = 15;
+
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+            });
+
+            // Store Three.js objects for later use
+            window.threeJS = {
+                scene,
+                camera,
+                renderer,
+                helix,
+                controls
+            };
+        }
+
+        // Initialize protein chart
+        function initProteinChart() {
+            const ctx = document.getElementById('protein-chart').getContext('2d');
+            window.proteinChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Length', 'Hydrophobic', 'Hydrophilic', 'Charged'],
+                    datasets: [{
+                        label: 'Protein Properties',
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            'rgba(106, 17, 203, 0.7)',
+                            'rgba(37, 117, 252, 0.7)',
+                            'rgba(255, 77, 77, 0.7)',
+                            'rgba(40, 167, 69, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(106, 17, 203, 1)',
+                            'rgba(37, 117, 252, 1)',
+                            'rgba(255, 77, 77, 1)',
+                            'rgba(40, 167, 69, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create different protein structures based on type
+        function createProteinStructure(type, sequence) {
+            const group = new THREE.Group();
+            
+            // Color mapping for amino acids
+            const aminoAcidColors = {
+                'A': 0x6a11cb, 'C': 0x2575fc, 'D': 0xff4d4d, 'E': 0x28a745,
+                'F': 0x6a11cb, 'G': 0x2575fc, 'H': 0xff4d4d, 'I': 0x28a745,
+                'K': 0x6a11cb, 'L': 0x2575fc, 'M': 0xff4d4d, 'N': 0x28a745,
+                'P': 0x6a11cb, 'Q': 0x2575fc, 'R': 0xff4d4d, 'S': 0x28a745,
+                'T': 0x6a11cb, 'V': 0x2575fc, 'W': 0xff4d4d, 'Y': 0x28a745
+            };
+
+            const radius = 1.8;
+            const heightFactor = 0.12;
+            const segments = sequence ? Math.min(sequence.length * 2, 250) : 100;
+
+            // Create backbone
+            const backbonePoints = [];
+            for (let i = 0; i <= segments; i++) {
+                let x, y, z;
+                const angle = (i / segments) * Math.PI * (type === 'alpha-helix' ? 10 : 
+                                              type === 'beta-sheet' ? 2 : 
+                                              type === 'random-coil' ? 6 : 0);
+                
+                if (type === 'alpha-helix') {
+                    x = radius * Math.cos(angle);
+                    y = radius * Math.sin(angle);
+                    z = i * heightFactor - (segments * heightFactor) / 2;
+                } else if (type === 'beta-sheet') {
+                    x = (i / segments) * radius * 2 - radius;
+                    y = Math.sin(i / 3) * 0.8;
+                    z = i * heightFactor - (segments * heightFactor) / 2;
+                } else if (type === 'random-coil') {
+                    x = radius * 0.7 * Math.cos(angle * 1.5);
+                    y = radius * 0.7 * Math.sin(angle * 0.8);
+                    z = i * heightFactor - (segments * heightFactor) / 2;
+                } else { // Linear
+                    x = (i / segments) * radius * 2 - radius;
+                    y = 0;
+                    z = 0;
+                }
+                
+                backbonePoints.push(new THREE.Vector3(x, y, z));
+            }
+
+            // Create backbone tube
+            const backboneCurve = new THREE.CatmullRomCurve3(backbonePoints);
+            const backboneGeometry = new THREE.TubeGeometry(backboneCurve, segments, 0.1, 8, false);
+            const backboneMaterial = new THREE.MeshPhongMaterial({
+                color: 0x6a11cb,
+                transparent: true,
+                opacity: 0.8,
+                shininess: 30
+            });
+            const backbone = new THREE.Mesh(backboneGeometry, backboneMaterial);
+            group.add(backbone);
+
+            // Add amino acid spheres if sequence is provided
+            if (sequence) {
+                for (let i = 0; i < Math.min(sequence.length, segments); i++) {
+                    const aminoAcid = sequence[i].toUpperCase();
+                    const color = aminoAcidColors[aminoAcid] || 0x6a11cb;
+                    
+                    const sphereGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+                    const sphereMaterial = new THREE.MeshPhongMaterial({ 
+                        color: color,
+                        shininess: 50,
+                        emissive: 0x000000,
+                        emissiveIntensity: 0.1,
+                        specular: 0x111111
+                    });
+                    
+                    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                    sphere.position.copy(backbonePoints[i]);
+                    
+                    // Add connector to backbone
+                    if (i > 0) {
+                        const connectorGeometry = new THREE.BufferGeometry().setFromPoints([
+                            backbonePoints[i-1],
+                            backbonePoints[i]
+                        ]);
+                        const connectorMaterial = new THREE.LineBasicMaterial({
+                            color: 0x2575fc,
+                            opacity: 0.6,
+                            transparent: true,
+                            linewidth: 2
+                        });
+                        const connector = new THREE.Line(connectorGeometry, connectorMaterial);
+                        group.add(connector);
+                    }
+                    
+                    group.add(sphere);
+                }
+            }
+
+            return group;
+        }
+
+        // Generate amino acid color key
+        function generateAminoAcidKey() {
+            const aminoAcids = {
+                'A': 'Alanine', 'C': 'Cysteine', 'D': 'Aspartic Acid', 'E': 'Glutamic Acid',
+                'F': 'Phenylalanine', 'G': 'Glycine', 'H': 'Histidine', 'I': 'Isoleucine',
+                'K': 'Lysine', 'L': 'Leucine', 'M': 'Methionine', 'N': 'Asparagine',
+                'P': 'Proline', 'Q': 'Glutamine', 'R': 'Arginine', 'S': 'Serine',
+                'T': 'Threonine', 'V': 'Valine', 'W': 'Tryptophan', 'Y': 'Tyrosine'
+            };
+
+            const aminoAcidColors = {
+                'A': '#6a11cb', 'C': '#2575fc', 'D': '#ff4d4d', 'E': '#28a745',
+                'F': '#6a11cb', 'G': '#2575fc', 'H': '#ff4d4d', 'I': '#28a745',
+                'K': '#6a11cb', 'L': '#2575fc', 'M': '#ff4d4d', 'N': '#28a745',
+                'P': '#6a11cb', 'Q': '#2575fc', 'R': '#ff4d4d', 'S': '#28a745',
+                'T': '#6a11cb', 'V': '#2575fc', 'W': '#ff4d4d', 'Y': '#28a745'
+            };
+
+            const container = document.getElementById('amino-acid-key');
+            container.innerHTML = '';
+
+            // Group by color
+            const colorGroups = {};
+            Object.entries(aminoAcids).forEach(([code, name]) => {
+                const color = aminoAcidColors[code];
+                if (!colorGroups[color]) {
+                    colorGroups[color] = [];
+                }
+                colorGroups[color].push({code, name});
+            });
+
+            // Create elements for each color group
+            Object.entries(colorGroups).forEach(([color, acids]) => {
+                const groupElement = document.createElement('div');
+                groupElement.style.display = 'flex';
+                groupElement.style.flexWrap = 'wrap';
+                groupElement.style.gap = '0.5rem';
+                groupElement.style.marginBottom = '0.5rem';
+                
+                acids.forEach(({code, name}) => {
+                    const element = document.createElement('div');
+                    element.className = 'amino-acid';
+                    element.innerHTML = `
+                        <span class="amino-acid-color" style="background: ${color};"></span>
+                        ${code}: ${name}
+                    `;
+                    groupElement.appendChild(element);
+                });
+                
+                container.appendChild(groupElement);
+            });
+        }
+
+        // Analyze sequence function with Flask integration
+        function analyzeSequence() {
+            const form = document.getElementById('protein-form');
+            const formData = new FormData(form);
+            const sequence = formData.get('protein_sequence').trim().toUpperCase();
+            const sequenceNumber = formData.get('sequence_id');
+            const dataType = formData.get('structure_type');
+
+            // Show loading state
+            document.getElementById('button-text').style.display = 'none';
+            document.getElementById('spinner').style.display = 'block';
+            document.getElementById('analyze-btn').disabled = true;
+
+            // Simple validation
+            if (!sequence) {
+                showError('Please enter a protein sequence');
+                return;
+            }
+
+            if (!sequenceNumber) {
+                showError('Please enter a sequence number');
+                return;
+            }
+
+            const validAminoAcids = /^[ACDEFGHIKLMNPQRSTVWY]+$/i;
+            if (!validAminoAcids.test(sequence)) {
+                showError('Please enter a valid protein sequence using standard amino acid codes (ACDEFGHIKLMNPQRSTVWY)');
+                return;
+            }
+
+            // Send data to Flask backend
+            fetch('/analyze', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update visualization
+                updateProteinVisualization(sequence, dataType);
+                
+                // Update chart
+                updateProteinChart(sequence);
+                
+                // Display results
+                displayAnalysisResults(data, sequence, sequenceNumber, dataType);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('An error occurred while processing your request. Please try again.');
+            })
+            .finally(() => {
+                // Hide loading state
+                document.getElementById('button-text').style.display = 'inline';
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('analyze-btn').disabled = false;
+            });
+        }
+
+        // Update protein visualization based on sequence and type
+        function updateProteinVisualization(sequence, type) {
+            const { scene, helix } = window.threeJS;
+            scene.remove(helix);
+            const newStructure = createProteinStructure(type, sequence);
+            scene.add(newStructure);
+            window.threeJS.helix = newStructure;
+            
+            // Reset camera position
+            window.threeJS.controls.reset();
+        }
+
+        // Update protein chart with sequence data
+        function updateProteinChart(sequence) {
+            const hydrophobicCount = (sequence.match(/[AILMFWYV]/g) || []).length;
+            const hydrophilicCount = (sequence.match(/[RNDQEHKST]/g) || []).length;
+            const chargedCount = (sequence.match(/[DEHKR]/g) || []).length;
+            
+            window.proteinChart.data.datasets[0].data = [
+                sequence.length,
+                hydrophobicCount,
+                hydrophilicCount,
+                chargedCount
+            ];
+            window.proteinChart.update();
+        }
+
+        // Display analysis results
+        function displayAnalysisResults(data, sequence, sequenceNumber, dataType) {
+            // Calculate amino acid composition
+            const composition = {};
+            const aminoAcids = 'ACDEFGHIKLMNPQRSTVWY';
+            for (const aa of aminoAcids) {
+                composition[aa] = (sequence.match(new RegExp(aa, 'g')) || []).length;
+            }
+            
+            // Generate composition string
+            let compositionStr = '';
+            for (const [aa, count] of Object.entries(composition)) {
+                if (count > 0) {
+                    compositionStr += `${aa}: ${count} (${(count/sequence.length*100).toFixed(1)}%)\n`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
